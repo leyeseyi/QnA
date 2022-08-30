@@ -11,30 +11,34 @@ def close_db(error):
         g.sqlite_db.close()    
 
 def current_user():
-    user = None
+    user_result = None
     if 'user' in session:
         user = session['user']
-    db = get_db()
-    user_cur = db.execute('select id, name, password, expert, admin from users where name = ?',user)
+        db = get_db()
+        user_cur = db.execute('select id, name, password, expert, admin from users where name = ?',[user])
+        user_result = user_cur.fetchone() 
+    return user_result
 @app.route('/')
 def index():
-    user = None
-    if 'user' in session:
-        user = session['user']
+    user = current_user()
     return render_template('home.html', user=user)
 
 @app.route('/register', methods = ['POST', 'GET'])
 def register():
+    user = current_user()
     if request.method == 'POST':
         hashed_password = generate_password_hash(request.form['password'], method='sha256')
         db = get_db()
         db.execute('insert into users (name, password, expert, admin) values (?,?,?,?)', [request.form['name'], hashed_password, '0', '0'])
         db.commit()
-        return 'User Created!'
-    return render_template('register.html')
+
+        session['user'] = request.form['name']
+        return redirect(url_for('index'))
+    return render_template('register.html', user=user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    user = current_user()
     if request.method == 'POST':
         db = get_db()
         name = request.form['name']
@@ -44,30 +48,35 @@ def login():
 
         if check_password_hash(user_result['password'], password):
             session['user'] = user_result['name']
-            return "<h1>Logged In!</h1>"
+            return redirect(url_for('index'))
         else:
             return '<h1>Password not correct</h1>'
-    return render_template('login.html')
+    return render_template('login.html', user=user)
 
 @app.route('/question')
 def question():
+    user = current_user()
     return render_template('')
 
 @app.route('/answer')
 def answer():
-    return render_template('answer.html')
+    user = current_user()
+    return render_template('answer.html', user=user)
 
 @app.route('/ask')
 def ask():
-    return render_template('ask.html')
+    user = current_user()
+    return render_template('ask.html', user=user)
 
 @app.route('/unanswered')
 def unanswered():
-    return render_template('unanswered.html')
+    user = current_user()
+    return render_template('unanswered.html', user=user)
 
 @app.route('/users')
 def users():
-    return render_template('users.html')
+    user = current_user()
+    return render_template('users.html', user=user)
 
 @app.route('/logout')
 def logout():
