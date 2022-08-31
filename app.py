@@ -63,10 +63,18 @@ def answer():
     user = current_user()
     return render_template('answer.html', user=user)
 
-@app.route('/ask')
-def ask():
+@app.route('/ask', methods = ['GET', 'POST'])
+def ask(): 
     user = current_user()
-    return render_template('ask.html', user=user)
+    db = get_db()
+    if request.method == 'POST':
+        db.execute('insert into questions (question_text,asked_by_id, expert_id) values (?, ?, ?)', [request.form['question'],user['id'],request.form['expert']])
+        db.commit()
+        return 'Question: {}, Expert ID: {}'.format(request.form['question'],request.form['expert'])
+   
+    expert_cur = db.execute('select id, name from users where expert == 1')
+    expert_results = expert_cur.fetchall()
+    return render_template('ask.html', user=user, experts = expert_results)
 
 @app.route('/unanswered')
 def unanswered():
