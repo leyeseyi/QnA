@@ -58,10 +58,18 @@ def question():
     user = current_user()
     return render_template('')
 
-@app.route('/answer')
-def answer():
+@app.route('/answer/<question_id>', methods = ['GET', 'POST'])
+def answer(question_id):
     user = current_user()
-    return render_template('answer.html', user=user)
+    db = get_db()
+
+    if request.method == 'POST':
+        db.execute('update questions set answer_text = ? where id = ?', [request.form['answer'], question_id])
+        db.commit()
+        return redirect(url_for('unanswered'))
+    question_cur = db.execute('select id, question_text from questions where id is ?', [question_id])
+    question = question_cur.fetchone()
+    return render_template('answer.html', user=user, question=question)
 
 @app.route('/ask', methods = ['GET', 'POST'])
 def ask(): 
@@ -70,7 +78,7 @@ def ask():
     if request.method == 'POST':
         db.execute('insert into questions (question_text,asked_by_id, expert_id) values (?, ?, ?)', [request.form['question'],user['id'],request.form['expert']])
         db.commit()
-        return 'Question: {}, Expert ID: {}'.format(request.form['question'],request.form['expert'])
+        return redirect(url_for('index'))
    
     expert_cur = db.execute('select id, name from users where expert == 1')
     expert_results = expert_cur.fetchall()
