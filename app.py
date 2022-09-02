@@ -79,7 +79,9 @@ def question(question_id):
     user = current_user()
     db = get_db()
     question_cur = db.execute('''select 
-                                    questions.id, questions.question_text, 
+                                    questions.id, 
+                                    questions.question_text, 
+                                    questions.answer_text,
                                     askers.name as asker_name, 
                                     experts.name as expert_name 
                                 from questions 
@@ -87,7 +89,7 @@ def question(question_id):
                                 join users as experts on experts.id = questions.expert_id 
                                 where questions.id = ?''', [question_id])
     question = question_cur.fetchone()
-    return render_template('question.html', question = question)
+    return render_template('question.html', question = question, user=user)
 
 @app.route('/answer/<question_id>', methods = ['GET', 'POST'])
 def answer(question_id):
